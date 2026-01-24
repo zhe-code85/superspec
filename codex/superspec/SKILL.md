@@ -1,9 +1,9 @@
 ---
-name: superspec-orchestrator
+name: superspec
 description: Use when a user asks for a new project kickoff, a plan/proposal/spec (规划/提案/规格), a new feature, or a requirements change (需求变更) and you need a traceable OpenSpec outer loop plus a disciplined superpowers inner loop (TDD/debugging/verification) that leaves auditable docs.
 ---
 
-# Superspec Orchestrator
+# Superspec
 
 ## Overview
 
