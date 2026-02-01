@@ -1,104 +1,64 @@
 ---
 name: superspec
-description: Use when a user asks for a new project kickoff, a plan/proposal/spec (规划/提案/规格), a new feature, or a requirements change (需求变更) and you need a traceable OpenSpec outer loop plus a disciplined superpowers inner loop (TDD/debugging/verification) that leaves auditable docs.
+description: "OpenSpec+Superpowers orchestrator for spec-driven development. Use for new changes, proposals/spec updates, implementation after approval, and archiving. Trigger on new feature/requirement, spec change, proposal, plan, architecture."
 ---
 
-# Superspec
+# SuperSpec (Fusion)
 
-## Overview
+Connect OpenSpec (strategy/spec truth) with Superpowers (execution discipline). Keep specs as source of truth and enforce explicit approval before coding.
 
-Use **OpenSpec as the outer loop** (spec-first change proposals + validation) and **superpowers skills as the inner loop** (disciplined execution per task). The output is a traceable set of artifacts (proposal/tasks/design/spec-deltas + validation notes) that supports ongoing requirement changes.
+## 0) Context Reload (Always)
+1. Read `openspec/project.md`.
+2. Run `openspec list` and `openspec list --specs`.
+3. If ambiguous or architecture-impacting, read `openspec/AGENTS.md`.
+4. Read relevant specs in `openspec/specs/**/spec.md`.
 
-## Quick Start (Outer → Inner)
+## 1) Proposal Phase (Strategy)
+**Trigger:** new capability, behavior change, architecture shift, or unclear request.
 
-1. Bootstrap superpowers (once per session): run `~/.codex/superpowers/.codex/superpowers-codex bootstrap` and review the available skills list.
-2. Load the minimum relevant skills for this request (examples below) using `~/.codex/superpowers/.codex/superpowers-codex use-skill <skill-name>`.
-3. Run the **OpenSpec outer loop** to create/update a change proposal and validate it.
-4. Execute each task using a **superpowers inner loop** skill (TDD for code, debugging for bugs, verification before completion).
-5. Update `openspec/changes/<change-id>/tasks.md` so the checklist matches reality.
+1. Ask clarifying questions one at a time.
+2. Invoke `brainstorming` to explore options, tradeoffs, and acceptance criteria.
+3. Pick a verb-led `change-id` (kebab-case).
+4. Create `openspec/changes/<change-id>/` with:
+   - `proposal.md` (why/what/impact)
+   - `tasks.md` (ordered checklist)
+   - `specs/<capability>/spec.md` (delta requirements)
+   - `design.md` only when cross-cutting, risky, or ambiguous
+5. Write deltas using `## ADDED|MODIFIED|REMOVED|RENAMED Requirements` and at least one `#### Scenario:` per requirement.
+6. Run `openspec validate <change-id> --strict --no-interactive`.
+7. Present proposal/tasks/spec deltas to the user for review.
+8. **Gate:** do NOT modify product code until the user replies exactly `Approved` (or a project-defined approval phrase).
 
-## Workflow Decision Tree
+## 2) Implementation Phase (Execution)
+**Trigger:** proposal is approved and tasks exist.
 
-### Step 0: Classify the Request
+1. Invoke `using-git-worktrees` to create a clean worktree for `<change-id>`.
+2. Reload context: `proposal.md`, `tasks.md`, and spec deltas.
+3. Execute tasks in order.
+4. For each task:
+   - If logic/algorithm heavy: invoke `test-driven-development` (red/green/refactor).
+   - If simple wiring/UI/config: use direct implementation; optionally `subagent-driven-development`.
+   - Run verification steps for the task.
+   - Mark the task `[x]` in `tasks.md` only after verification passes.
+5. If tests fail, invoke `systematic-debugging` before changing scope or design.
+6. Avoid scope creep; update proposal/specs first if scope must change.
 
-Use OpenSpec (create a change proposal) if the request is any of:
-- New project setup (new repo, new capability specs)
-- New capability / feature (行为新增)
-- Requirements change (行为变更 / 需求变更)
-- Breaking change / architecture shift / performance or security work
+## 3) Archive Phase (Delivery)
+**Trigger:** all tasks are `[x]` and verification passes.
 
-Skip a proposal only for narrow bugfixes that restore intended behavior (and still keep a minimal trace: failing test first, fix, verify).
+1. Invoke `finishing-a-development-branch` for cleanup and final checks.
+2. Run full verification (project test/lint commands).
+3. Archive the change: `openspec archive <change-id> --yes`.
+4. Run `openspec validate --strict --no-interactive`.
 
-### Step 1 (Outer Loop): OpenSpec Change Creation
+## Recovery / Resume
+If interrupted, do NOT guess. Reconstruct from files:
+1. `openspec list` to find active change.
+2. `openspec show <change-id>` to reload proposal/tasks/spec deltas.
+3. `openspec validate <change-id> --strict --no-interactive`.
+4. Resume from the first unchecked task or re-request approval if not yet approved.
 
-Minimum required artifacts (per change-id):
-- `openspec/changes/<change-id>/proposal.md`
-- `openspec/changes/<change-id>/tasks.md`
-- `openspec/changes/<change-id>/design.md` (only if technical decisions need recording)
-- `openspec/changes/<change-id>/specs/<capability>/spec.md` (deltas: ADDED/MODIFIED/REMOVED/RENAMED)
-
-Core commands (run from repo root):
-```bash
-openspec list
-openspec list --specs
-openspec validate <change-id> --strict --no-interactive
-```
-
-Authoring rules that must be enforced:
-- Every `### Requirement:` has at least one `#### Scenario:`
-- Deltas use exactly one of: `## ADDED Requirements`, `## MODIFIED Requirements`, `## REMOVED Requirements`, `## RENAMED Requirements`
-- Prefer editing an existing capability over inventing duplicates
-
-Optional: use `scripts/new-openspec-change.ps1` in this skill to scaffold a change quickly when the `openspec` CLI isn't available.
-
-### Step 2 (Inner Loop): Execute Each Task with a Superpowers Skill
-
-Pick exactly one primary inner-loop skill per task:
-- Ambiguous / many options → `superpowers:brainstorming` (then produce concrete tasks/spec deltas)
-- Multi-step implementation checklist → `superpowers:writing-plans` (then `superpowers:executing-plans`)
-- New feature or behavior change → `superpowers:test-driven-development`
-- Bug / flaky behavior / hard-to-reproduce issue → `superpowers:systematic-debugging`
-- Before final response / PR-ready state → `superpowers:verification-before-completion`
-
-Inner-loop discipline:
-- Always load the chosen superpowers skill *before* doing the work.
-- Follow the skill’s checklists with `update_plan` items.
-- Keep artifacts in sync: update `tasks.md` and add/adjust spec deltas as behavior changes.
-
-### Step 3: Traceability (可追踪/可审计)
-
-Use these conventions to keep work traceable across requirement changes:
-- Name every change with a verb-led `change-id` (`add-...`, `update-...`, `refactor-...`).
-- Keep a stable narrative in `proposal.md` (why/what/impact) and a checklist in `tasks.md`.
-- Put decisions (tradeoffs, rejected options) into `design.md` when needed.
-- Optional: add a lightweight execution log using `assets/templates/trace.md` (store in `docs/trace/<change-id>.md`).
-- In git commits/PR titles, prefix with `<change-id>:` so history is searchable.
-
-## Common Mistakes (and Fixes)
-
-- Skipping `openspec validate` → Always run strict non-interactive validation for the change.
-- Writing deltas without scenarios → Add at least one `#### Scenario:` per requirement.
-- Implementing while the spec is vague → Stop and run `superpowers:brainstorming` to clarify.
-- Mixing multiple inner-loop skills at once → Choose one primary skill per task; keep scope tight.
-
-## Red Flags — STOP and Reset
-
-- “This is small; we can skip spec/proposal.” (If behavior changes, spec it.)
-- “I’ll add tests later.” (Use TDD for any new behavior.)
-- “We already know what to build.” (If requirements are ambiguous, brainstorm first.)
-- “We don’t need to validate.” (Validate changes strictly before sharing/merging.)
-
-## Bundled Resources
-
-### scripts/
-- `scripts/new-openspec-change.ps1`: Scaffold an OpenSpec change folder with proposal/tasks/spec deltas.
-
-### references/
-- `references/openspec-outer-loop.md`: Detailed OpenSpec authoring rules and checklist.
-- `references/superpowers-inner-loop.md`: Skill selection guide and discipline reminders.
-
-### assets/
-- `assets/templates/proposal.md`
-- `assets/templates/tasks.md`
-- `assets/templates/design.md`
-- `assets/templates/trace.md`
+## Decision Logic
+- No active change and new requirement -> Proposal Phase.
+- Active change approved with pending tasks -> Implementation Phase.
+- All tasks complete -> Archive Phase.
